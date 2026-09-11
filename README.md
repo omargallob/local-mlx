@@ -20,6 +20,7 @@ Global flags must precede the command.
 
 | Command | Purpose |
 |---------|---------|
+| `ping` | Check the server is reachable; prints `OK`/`DOWN` with latency and model count (exit 1 when down). |
 | `models` | List the models the server has available. |
 | `run [prompt]` | One-shot completion. Prompt comes from the argument or stdin. Pipeable — the automation building block. |
 | `chat` | Interactive streaming REPL (`/model`, `/models`, `/reset`, `/quit`). |
@@ -33,10 +34,19 @@ model is `MLX_MODEL`, else the server's first reported model.
 
 ```sh
 export MLX_HOST=192.168.1.50:8080
+mlx ping
 echo "say hi in three words" | mlx run
 mlx models
 mlx chat
 ```
+
+### Health checks
+
+`mlx ping` is an explicit reachability check. In addition, `models`, `run`, and
+`chat` run a fast (~3s) **preflight** first, so an unreachable server fails
+quickly with a clear message instead of hanging on the request timeout.
+`heartbeat` skips the fatal preflight — it is a monitor and keeps running (and
+reporting `DOWN`) even when the server is unavailable.
 
 ### OpenCode integration
 
