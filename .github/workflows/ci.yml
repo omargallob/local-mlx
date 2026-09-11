@@ -10,7 +10,20 @@ permissions:
 
 jobs:
   test-and-lint:
-    runs-on: ubuntu-latest
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-amd64
+            runner: ubuntu-latest
+          - name: linux-arm64
+            runner: ubuntu-24.04-arm
+          - name: macos-amd64
+            runner: macos-13
+          - name: macos-arm64
+            runner: macos-14
     steps:
       - uses: actions/checkout@v4
 
@@ -30,11 +43,14 @@ jobs:
       - name: Test (nogo runs inside the build)
         run: bazel test //...
 
+      - name: Lint Go (golangci-lint via Bazel)
+        run: bazel run //tools/lint:golangci-lint -- run
+
+      # BUILD-file checks are host-agnostic; run once on linux/amd64.
       - name: Lint BUILD files (buildifier)
+        if: matrix.name == 'linux-amd64'
         run: bazel run //:buildifier.check
 
       - name: Check BUILD files are up to date (gazelle)
+        if: matrix.name == 'linux-amd64'
         run: bazel run //:gazelle -- -mode=diff
-
-      - name: Lint Go (golangci-lint via Bazel)
-        run: bazel run //tools/lint:golangci-lint -- run
