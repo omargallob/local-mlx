@@ -5,7 +5,7 @@
 //
 //	mlx [--host h] [--model m] <command> [args]
 //
-// Global flags must precede the command. Commands: models, run, chat, heartbeat.
+// Global flags must precede the command.
 package main
 
 import (
@@ -25,11 +25,12 @@ func main() {
 	root.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: mlx [--host h] [--model m] <command> [args]\n\n")
 		fmt.Fprintf(os.Stderr, "commands:\n")
-		fmt.Fprintf(os.Stderr, "  ping                check the server is reachable\n")
-		fmt.Fprintf(os.Stderr, "  models              list available models\n")
-		fmt.Fprintf(os.Stderr, "  run [prompt]        one-shot completion (prompt from arg or stdin)\n")
-		fmt.Fprintf(os.Stderr, "  chat                interactive streaming chat\n")
-		fmt.Fprintf(os.Stderr, "  heartbeat           long-lived server ping loop (container default)\n\n")
+		fmt.Fprintf(os.Stderr, "  ping                      check the server is reachable\n")
+		fmt.Fprintf(os.Stderr, "  models                    list available models\n")
+		fmt.Fprintf(os.Stderr, "  run [prompt]              one-shot completion (prompt from arg or stdin)\n")
+		fmt.Fprintf(os.Stderr, "  chat                      interactive streaming chat\n")
+		fmt.Fprintf(os.Stderr, "  heartbeat                 long-lived server ping loop (container default)\n")
+		fmt.Fprintf(os.Stderr, "  opencode [check|suggest]  inspect or suggest the OpenCode mlx provider\n\n")
 		fmt.Fprintf(os.Stderr, "global flags:\n")
 		root.PrintDefaults()
 	}
@@ -75,6 +76,8 @@ func main() {
 			fmt.Fprintf(os.Stderr, "warning: %v\n", perr)
 		}
 		err = cmdHeartbeat(ctx, e, args[1:])
+	case "opencode":
+		err = cmdOpencode(ctx, e, args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command %q\n\n", cmd)
 		root.Usage()

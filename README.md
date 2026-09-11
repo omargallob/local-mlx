@@ -25,6 +25,7 @@ Global flags must precede the command.
 | `run [prompt]` | One-shot completion. Prompt comes from the argument or stdin. Pipeable — the automation building block. |
 | `chat` | Interactive streaming REPL (`/model`, `/models`, `/reset`, `/quit`). |
 | `heartbeat [--interval d]` | Long-lived loop that pings the server and logs status. The container's default command. |
+| `opencode [check\|suggest]` | Inspect your OpenCode config for an `mlx` provider, or print a suggested one populated with the live models. Read-only — never writes files. |
 
 ### Configuration
 
@@ -46,6 +47,22 @@ mlx chat
 quickly with a clear message instead of hanging on the request timeout.
 `heartbeat` skips the fatal preflight — it is a monitor and keeps running (and
 reporting `DOWN`) even when the server is unavailable.
+
+### OpenCode integration
+
+If you use [OpenCode](https://opencode.ai), `mlx opencode` helps point it at this
+server (via an OpenAI-compatible provider):
+
+```sh
+mlx opencode              # check: is an `mlx` provider configured? (exit 1 if not)
+mlx opencode suggest      # print a provider block with your live models to paste in
+```
+
+`check` reads `~/.config/opencode/opencode.{jsonc,json}` (override with `--dir` or
+`--config`) and warns if the `baseURL` doesn't match your `--host` or if only a
+placeholder model is listed. `suggest` queries the server's `/v1/models` and prints
+a ready-to-paste `provider.mlx` block (falling back to a placeholder if the server
+is unreachable). It is **suggest-only** and never modifies your OpenCode files.
 
 ## Build & test (Bazel)
 
