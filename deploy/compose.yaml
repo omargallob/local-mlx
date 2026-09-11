@@ -1,0 +1,15 @@
+# Runs the mlx agent on the Raspberry Pi, talking to the Mac's mlx_lm.server.
+# Usage (on the Pi):
+#   cp compose.env.example compose.env   # then edit MLX_HOST
+#   docker compose --env-file compose.env up -d
+services:
+  mlx-agent:
+    image: ghcr.io/omargallob/local-mlx:latest
+    container_name: mlx-agent
+    restart: unless-stopped
+    env_file:
+      - compose.env
+    # The image entrypoint is `mlx heartbeat`; these args tune it. Docker pulls
+    # the arm64 variant automatically on the Pi from the multi-arch manifest.
+    command: ["--interval", "60s"]
+    pull_policy: always
