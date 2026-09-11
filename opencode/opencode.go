@@ -100,7 +100,7 @@ func StripJSONC(b []byte) []byte {
 			}
 		case c == '/' && i+1 < len(b) && b[i+1] == '*':
 			i += 2
-			for i+1 < len(b) && !(b[i] == '*' && b[i+1] == '/') {
+			for i+1 < len(b) && (b[i] != '*' || b[i+1] != '/') {
 				i++
 			}
 			i++ // skip past the closing '/', outer loop advances again

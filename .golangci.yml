@@ -1,0 +1,20 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  settings:
+    errcheck:
+      # Writes to stdout/buffers and similar are conventionally unchecked.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+  exclusions:
+    rules:
+      # Test HTTP handlers intentionally ignore Write/Unmarshal errors.
+      - path: _test\.go
+        linters:
+          - errcheck

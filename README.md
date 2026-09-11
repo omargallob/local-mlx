@@ -73,6 +73,7 @@ bazel test //...              # unit tests (nogo/go-vet runs inside the build)
 bazel run //cmd/mlx -- models # run the CLI
 bazel run //:buildifier       # format BUILD/.bzl/MODULE files
 bazel run //:gazelle          # regenerate BUILD files after adding/removing Go files
+bazel run //tools/lint:golangci-lint -- run   # lint Go with golangci-lint (also a CI step)
 ```
 
 ### Cross-compile for the Raspberry Pi
