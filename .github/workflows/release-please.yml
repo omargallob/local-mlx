@@ -1,0 +1,38 @@
+name: release-please
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          target-branch: master
+
+      # When a release is cut, publish the versioned multi-arch image. This lives
+      # here (not in a tag-triggered workflow) because tags created with the
+      # default GITHUB_TOKEN do not trigger other workflows.
+      - uses: actions/checkout@v4
+        if: ${{ steps.release.outputs.release_created }}
+
+      - uses: bazel-contrib/setup-bazel@0.14.0
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          bazelisk-cache: true
+          disk-cache: true
+          repository-cache: true
+
+      - name: Publish versioned image to ghcr
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          bazel run //cmd/mlx:push -- --tag "${{ steps.release.outputs.tag_name }}"
