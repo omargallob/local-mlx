@@ -1,0 +1,14 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "opencode",
+    srcs = ["opencode.go"],
+    importpath = "github.com/omargallob/local-mlx/opencode",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "opencode_test",
+    srcs = ["opencode_test.go"],
+    embed = [":opencode"],
+)

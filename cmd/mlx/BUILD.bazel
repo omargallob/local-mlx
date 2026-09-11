@@ -8,10 +8,14 @@ go_library(
     srcs = [
         "commands.go",
         "main.go",
+        "opencode.go",
     ],
     importpath = "github.com/omargallob/local-mlx/cmd/mlx",
     visibility = ["//visibility:private"],
-    deps = ["//mlx"],
+    deps = [
+        "//mlx",
+        "//opencode",
+    ],
 )
 
 go_binary(
@@ -22,7 +26,10 @@ go_binary(
 
 go_test(
     name = "mlx_test",
-    srcs = ["commands_test.go"],
+    srcs = [
+        "commands_test.go",
+        "opencode_test.go",
+    ],
     embed = [":mlx_lib"],
     deps = ["//mlx"],
 )
