@@ -1,4 +1,7 @@
+load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("@rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_image_index", "oci_push")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
 go_library(
     name = "mlx_lib",
@@ -22,4 +25,57 @@ go_test(
     srcs = ["commands_test.go"],
     embed = [":mlx_lib"],
     deps = ["//mlx"],
+)
+
+# --- Container image (rules_oci, multi-arch) ---
+
+# The binary at a stable path inside the image.
+pkg_tar(
+    name = "app_layer",
+    srcs = [":mlx"],
+    package_dir = "/usr/local/bin",
+)
+
+# Arch-agnostic image. The default entrypoint runs the heartbeat loop so a
+# restart:unless-stopped compose service stays alive; override the args to run
+# other subcommands (models/run/chat). Restricted to linux so `bazel build //...`
+# on a non-linux host skips it (the platform_transition targets below force linux).
+oci_image(
+    name = "image",
+    base = "@distroless_static",
+    entrypoint = [
+        "/usr/local/bin/mlx",
+        "heartbeat",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+    tars = [":app_layer"],
+)
+
+# Build the image (and its Go binary layer) for each target arch.
+platform_transition_filegroup(
+    name = "image_linux_amd64",
+    srcs = [":image"],
+    target_platform = "@rules_go//go/toolchain:linux_amd64",
+)
+
+platform_transition_filegroup(
+    name = "image_linux_arm64",
+    srcs = [":image"],
+    target_platform = "@rules_go//go/toolchain:linux_arm64",
+)
+
+# Multi-arch manifest list: arm64 for the Pi + amd64.
+oci_image_index(
+    name = "image_index",
+    images = [
+        ":image_linux_amd64",
+        ":image_linux_arm64",
+    ],
+)
+
+# `bazel run //cmd/mlx:push -- --tag <tag>` publishes the multi-arch image.
+oci_push(
+    name = "push",
+    image = ":image_index",
+    repository = "ghcr.io/omargallob/local-mlx",
 )
