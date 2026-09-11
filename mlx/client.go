@@ -75,6 +75,14 @@ func (c *Client) Models(ctx context.Context) ([]string, error) {
 	return ids, nil
 }
 
+// Ping is a fast reachability check: it returns nil if the server responds, or an
+// error otherwise. Pass a short-deadline context to bound how long it waits — the
+// client's own HTTP timeout is only an upper bound.
+func (c *Client) Ping(ctx context.Context) error {
+	_, err := c.Models(ctx)
+	return err
+}
+
 type chatRequest struct {
 	Model    string    `json:"model"`
 	Messages []Message `json:"messages"`
