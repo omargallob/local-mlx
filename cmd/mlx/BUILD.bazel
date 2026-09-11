@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "mlx_lib",
+    srcs = [
+        "commands.go",
+        "main.go",
+    ],
+    importpath = "github.com/omargallob/local-mlx/cmd/mlx",
+    visibility = ["//visibility:private"],
+    deps = ["//mlx"],
+)
+
+go_binary(
+    name = "mlx",
+    embed = [":mlx_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "mlx_test",
+    srcs = ["commands_test.go"],
+    embed = [":mlx_lib"],
+    deps = ["//mlx"],
+)
