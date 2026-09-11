@@ -5,8 +5,12 @@ module(
     version = "0.1.0",
 )
 
+bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_go", version = "0.63.0")
 bazel_dep(name = "gazelle", version = "0.54.0")
+bazel_dep(name = "rules_oci", version = "2.3.0")
+bazel_dep(name = "rules_pkg", version = "1.3.0")
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
 
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.4", dev_dependency = True)
 
@@ -16,3 +20,17 @@ go_sdk.download(version = "1.26.3")
 
 # Static analysis (go vet set) wired into every build/test.
 go_sdk.nogo(nogo = "//:nogo")
+
+# Multi-arch base image for the container (small, distroless, includes CA certs).
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "distroless_static",
+    # gcr.io/distroless/static:nonroot, pinned for reproducible/cacheable builds.
+    digest = "sha256:1c2c046bc09ed40fad370b599a0b1ae7987f55b01e247cf27a7c27cd97e5bbc7",
+    image = "gcr.io/distroless/static",
+    platforms = [
+        "linux/amd64",
+        "linux/arm64/v8",
+    ],
+)
+use_repo(oci, "distroless_static")
