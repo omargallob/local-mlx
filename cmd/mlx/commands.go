@@ -22,6 +22,35 @@ type appEnv struct {
 	out    io.Writer
 }
 
+// preflightTimeout bounds the fast "is the server up?" check.
+const preflightTimeout = 3 * time.Second
+
+// preflight is a fast reachability check run before commands that need the
+// server. It fails quickly with a friendly message instead of hanging on the
+// client's long request timeout.
+func preflight(ctx context.Context, e *appEnv, timeout time.Duration) error {
+	pctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	if err := e.client.Ping(pctx); err != nil {
+		return fmt.Errorf("mlx server not reachable at %s: %w — is mlx_lm.server running? (set MLX_HOST)", e.client.BaseURL, err)
+	}
+	return nil
+}
+
+// cmdPing reports whether the server is up, with latency and model count.
+func cmdPing(ctx context.Context, e *appEnv) error {
+	pctx, cancel := context.WithTimeout(ctx, preflightTimeout)
+	defer cancel()
+	start := time.Now()
+	models, err := e.client.Models(pctx)
+	elapsed := time.Since(start).Round(time.Millisecond)
+	if err != nil {
+		return fmt.Errorf("mlx DOWN %s (%s): %w", e.client.BaseURL, elapsed, err)
+	}
+	fmt.Fprintf(e.out, "mlx OK %s (%s, %d models)\n", e.client.BaseURL, elapsed, len(models))
+	return nil
+}
+
 // resolveModel returns the configured model, or the server's first if unset.
 func (e *appEnv) resolveModel(ctx context.Context) (string, error) {
 	if e.model != "" {

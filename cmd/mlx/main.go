@@ -25,6 +25,7 @@ func main() {
 	root.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: mlx [--host h] [--model m] <command> [args]\n\n")
 		fmt.Fprintf(os.Stderr, "commands:\n")
+		fmt.Fprintf(os.Stderr, "  ping                check the server is reachable\n")
 		fmt.Fprintf(os.Stderr, "  models              list available models\n")
 		fmt.Fprintf(os.Stderr, "  run [prompt]        one-shot completion (prompt from arg or stdin)\n")
 		fmt.Fprintf(os.Stderr, "  chat                interactive streaming chat\n")
@@ -52,13 +53,27 @@ func main() {
 
 	var err error
 	switch cmd := args[0]; cmd {
+	case "ping":
+		// The command is itself the health check.
+		err = cmdPing(ctx, e)
 	case "models":
-		err = cmdModels(ctx, e)
+		if err = preflight(ctx, e, preflightTimeout); err == nil {
+			err = cmdModels(ctx, e)
+		}
 	case "run":
-		err = cmdRun(ctx, e, args[1:])
+		if err = preflight(ctx, e, preflightTimeout); err == nil {
+			err = cmdRun(ctx, e, args[1:])
+		}
 	case "chat":
-		err = cmdChat(ctx, e, args[1:])
+		if err = preflight(ctx, e, preflightTimeout); err == nil {
+			err = cmdChat(ctx, e, args[1:])
+		}
 	case "heartbeat":
+		// A monitor must keep running even when the target is down, so the
+		// preflight here is informational, not fatal.
+		if perr := preflight(ctx, e, preflightTimeout); perr != nil {
+			fmt.Fprintf(os.Stderr, "warning: %v\n", perr)
+		}
 		err = cmdHeartbeat(ctx, e, args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command %q\n\n", cmd)

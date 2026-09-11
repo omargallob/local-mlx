@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestNewClientHostNormalization(t *testing.T) {
@@ -97,6 +98,38 @@ func TestChatStream(t *testing.T) {
 	}
 	if strings.Join(tokens, "") != "Hello" {
 		t.Errorf("tokens = %v, want to join to Hello", tokens)
+	}
+}
+
+func TestPingUp(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"data":[{"id":"a"}]}`))
+	}))
+	defer srv.Close()
+	if err := NewClient(srv.URL).Ping(context.Background()); err != nil {
+		t.Fatalf("Ping (up): %v", err)
+	}
+}
+
+func TestPingErrorOnNon200(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "down", http.StatusServiceUnavailable)
+	}))
+	defer srv.Close()
+	if err := NewClient(srv.URL).Ping(context.Background()); err == nil {
+		t.Fatal("expected error for non-200")
+	}
+}
+
+func TestPingUnreachable(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	url := srv.URL
+	srv.Close() // now nothing is listening
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if err := NewClient(url).Ping(ctx); err == nil {
+		t.Fatal("expected error for unreachable server")
 	}
 }
 

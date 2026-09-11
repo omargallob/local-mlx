@@ -49,6 +49,55 @@ func newEnv(srv *httptest.Server, in string) (*appEnv, *bytes.Buffer) {
 	}, out
 }
 
+func TestCmdPingUp(t *testing.T) {
+	srv := fakeServer(t)
+	defer srv.Close()
+	e, out := newEnv(srv, "")
+	if err := cmdPing(context.Background(), e); err != nil {
+		t.Fatalf("cmdPing (up): %v", err)
+	}
+	if got := out.String(); !strings.Contains(got, "mlx OK") || !strings.Contains(got, "2 models") {
+		t.Errorf("output = %q", got)
+	}
+}
+
+func TestCmdPingDown(t *testing.T) {
+	srv := fakeServer(t)
+	url := srv.URL
+	srv.Close() // nothing listening now
+	e := &appEnv{client: mlx.NewClient(url), in: strings.NewReader(""), out: &bytes.Buffer{}}
+	err := cmdPing(context.Background(), e)
+	if err == nil {
+		t.Fatal("expected error when server is down")
+	}
+	if !strings.Contains(err.Error(), "DOWN") {
+		t.Errorf("error = %q, want it to mention DOWN", err)
+	}
+}
+
+func TestPreflightOK(t *testing.T) {
+	srv := fakeServer(t)
+	defer srv.Close()
+	e, _ := newEnv(srv, "")
+	if err := preflight(context.Background(), e, preflightTimeout); err != nil {
+		t.Fatalf("preflight (up): %v", err)
+	}
+}
+
+func TestPreflightDown(t *testing.T) {
+	srv := fakeServer(t)
+	url := srv.URL
+	srv.Close()
+	e := &appEnv{client: mlx.NewClient(url), in: strings.NewReader(""), out: &bytes.Buffer{}}
+	err := preflight(context.Background(), e, 2*time.Second)
+	if err == nil {
+		t.Fatal("expected preflight error when server is down")
+	}
+	if !strings.Contains(err.Error(), "not reachable") {
+		t.Errorf("error = %q, want a friendly 'not reachable' message", err)
+	}
+}
+
 func TestCmdModels(t *testing.T) {
 	srv := fakeServer(t)
 	defer srv.Close()
