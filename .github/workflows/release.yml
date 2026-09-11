@@ -1,0 +1,40 @@
+name: image
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Additional image tag to push (e.g. v1.2.3)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: true
+          repository-cache: true
+
+      - name: Log in to ghcr
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Push :latest and :sha-<short>
+        run: |
+          short=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          bazel run //cmd/mlx:push -- --tag latest
+          bazel run //cmd/mlx:push -- --tag "sha-${short}"
+
+      - name: Push manual tag
+        if: ${{ github.event.inputs.tag != '' }}
+        run: bazel run //cmd/mlx:push -- --tag "${{ github.event.inputs.tag }}"
