@@ -21,6 +21,12 @@ jobs:
           disk-cache: true
           repository-cache: true
 
+      # golangci-lint typechecks with the host Go toolchain; match go.mod.
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
       - name: Test (nogo runs inside the build)
         run: bazel test //...
 
@@ -29,3 +35,6 @@ jobs:
 
       - name: Check BUILD files are up to date (gazelle)
         run: bazel run //:gazelle -- -mode=diff
+
+      - name: Lint Go (golangci-lint via Bazel)
+        run: bazel run //tools/lint:golangci-lint -- run

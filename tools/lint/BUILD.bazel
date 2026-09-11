@@ -1,0 +1,26 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
+# Copy the platform-appropriate golangci-lint binary to a stable path so the
+# wrapper can find it via a fixed runfiles location.
+copy_file(
+    name = "golangci_lint_bin",
+    src = select({
+        "@platforms//os:linux": "@golangci_lint_linux_amd64//:golangci-lint",
+        "@platforms//os:macos": "@golangci_lint_darwin_arm64//:golangci-lint",
+    }),
+    out = "golangci-lint-bin",
+    is_executable = True,
+)
+
+# `bazel run //tools/lint:golangci-lint -- run` lints the workspace and exits
+# non-zero on findings (a clean CI gate).
+sh_binary(
+    name = "golangci-lint",
+    srcs = ["golangci_lint.sh"],
+    data = [
+        ":golangci_lint_bin",
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+    visibility = ["//visibility:public"],
+)

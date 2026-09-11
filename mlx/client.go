@@ -59,7 +59,7 @@ func (c *Client) Models(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("models: %s: %s", resp.Status, strings.TrimSpace(string(body)))
@@ -104,7 +104,7 @@ func (c *Client) Chat(ctx context.Context, model string, messages []Message) (st
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if err := checkOK("chat", resp); err != nil {
 		return "", err
 	}
@@ -133,7 +133,7 @@ func (c *Client) ChatStream(ctx context.Context, model string, messages []Messag
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if err := checkOK("chat", resp); err != nil {
 		return "", err
 	}
