@@ -1,0 +1,18 @@
+"""local-mlx: Go client + CLI for a Mac-hosted mlx_lm.server."""
+
+module(
+    name = "local_mlx",
+    version = "0.1.0",
+)
+
+bazel_dep(name = "rules_go", version = "0.63.0")
+bazel_dep(name = "gazelle", version = "0.54.0")
+
+bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.4", dev_dependency = True)
+
+# Hermetic Go SDK (does not use the host toolchain).
+go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(version = "1.26.3")
+
+# Static analysis (go vet set) wired into every build/test.
+go_sdk.nogo(nogo = "//:nogo")

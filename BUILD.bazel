@@ -1,0 +1,29 @@
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+load("@gazelle//:def.bzl", "gazelle")
+load("@rules_go//go:def.bzl", "nogo")
+
+# gazelle:prefix github.com/omargallob/local-mlx
+gazelle(name = "gazelle")
+
+# Static analyzers run as part of every build/test.
+nogo(
+    name = "nogo",
+    vet = True,
+    visibility = ["//visibility:public"],
+)
+
+# `bazel run //:buildifier` formats BUILD/.bzl/MODULE files in place.
+buildifier(
+    name = "buildifier",
+    exclude_patterns = ["./.git/*"],
+    lint_mode = "fix",
+    mode = "fix",
+)
+
+# `bazel run //:buildifier.check` fails on any unformatted/lint issues (CI).
+buildifier(
+    name = "buildifier.check",
+    exclude_patterns = ["./.git/*"],
+    lint_mode = "warn",
+    mode = "diff",
+)

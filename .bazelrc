@@ -1,0 +1,5 @@
+# Show test failures inline.
+test --test_output=errors
+
+# Keep the sandbox honest about missing deps.
+build --incompatible_strict_action_env
