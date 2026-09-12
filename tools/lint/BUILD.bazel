@@ -1,13 +1,49 @@
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
+# Match the host os+cpu so we pick the right golangci-lint binary on the Pi
+# (linux/arm64), an Intel Mac (macOS/amd64), and Apple silicon (macOS/arm64).
+config_setting(
+    name = "linux_amd64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+config_setting(
+    name = "linux_arm64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:arm64",
+    ],
+)
+
+config_setting(
+    name = "darwin_amd64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+config_setting(
+    name = "darwin_arm64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:arm64",
+    ],
+)
+
 # Copy the platform-appropriate golangci-lint binary to a stable path so the
 # wrapper can find it via a fixed runfiles location.
 copy_file(
     name = "golangci_lint_bin",
     src = select({
-        "@platforms//os:linux": "@golangci_lint_linux_amd64//:golangci-lint",
-        "@platforms//os:macos": "@golangci_lint_darwin_arm64//:golangci-lint",
+        ":linux_amd64": "@golangci_lint_linux_amd64//:golangci-lint",
+        ":linux_arm64": "@golangci_lint_linux_arm64//:golangci-lint",
+        ":darwin_amd64": "@golangci_lint_darwin_amd64//:golangci-lint",
+        ":darwin_arm64": "@golangci_lint_darwin_arm64//:golangci-lint",
     }),
     out = "golangci-lint-bin",
     is_executable = True,
